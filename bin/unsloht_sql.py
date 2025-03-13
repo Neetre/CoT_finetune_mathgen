@@ -28,18 +28,17 @@ run = wandb.init(
     anonymous="allow"
 )
 
-max_seq_length = 16384
+max_seq_length = 2048
 dtype = None
 load_in_4bit = True 
 
 
 model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name="unsloth/DeepSeek-R1-Distill-Llama-8B",
+    model_name="unsloth/Phi-4",
     max_seq_length=max_seq_length,
     dtype=dtype,
     load_in_4bit=load_in_4bit,
     token=hugging_face_token,
-    use_flash_attention2=True,
 )
 
 
@@ -114,7 +113,7 @@ model_lora = FastLanguageModel.get_peft_model(
         "up_proj",
         "down_proj",
     ],
-    lora_alpha=8,
+    lora_alpha=16,
     lora_dropout=0,
     bias="none",
     use_gradient_checkpointing="unsloth",
