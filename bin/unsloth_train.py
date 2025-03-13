@@ -1,6 +1,7 @@
 # !pip install datasets
 # !pip install unsloth
 # !pip install --force-reinstall --no-cache-dir --no-deps git+https://github.com/unslothai/unsloth.git
+# https://github.com/Neetre/CoT_finetune_mathgen.git
 
 import os
 
@@ -22,12 +23,12 @@ login(hugging_face_token)
 
 wandb.login(key=wnb_token)
 run = wandb.init(
-    project='Fine-tune-DeepSeek-R1-Distill-Llama-8B on open-r1/OpenR1-Math-220k', 
+    project='Fine-tune-DeepSeek-R1-Distill-Llama-8B on open-r1-OpenR1-Math-220k', 
     job_type="training", 
     anonymous="allow"
 )
 
-max_seq_length = 2048
+max_seq_length = 16384
 dtype = None
 load_in_4bit = True 
 
@@ -38,6 +39,7 @@ model, tokenizer = FastLanguageModel.from_pretrained(
     dtype=dtype,
     load_in_4bit=load_in_4bit,
     token=hugging_face_token,
+    use_flash_attention2=True,
 )
 
 
@@ -59,7 +61,7 @@ Solve the given math problem step by step. Show your reasoning and provide the f
 {}"""
 
 
-dataset = load_dataset("open-r1/OpenR1-Math-220k", "all", split = "train[0:500]",trust_remote_code=True)
+dataset = load_dataset("open-r1/OpenR1-Math-220k", "all", split = "train[0:1000]",trust_remote_code=True, cache_dir="./dataset_cache")
 print(dataset)
 print(dataset[1])
 # print(dataset[1]["generations"][0])
@@ -83,14 +85,14 @@ EOS_TOKEN = tokenizer.eos_token
 
 def formatting_prompts_func(examples):
     inputs = examples["problem"]
-    cots = examples["generations"][0].split("</think>")[0]
+    cots = examples["generations"]
     outputs = examples["solution"]
     
     texts = []
     
     
     for input, cot, output in zip(inputs, cots, outputs):  
-        text = train_prompt_style.format(input, cot, output) + EOS_TOKEN
+        text = train_prompt_style.format(input, cot[0].split("</think>")[0], output) + EOS_TOKEN
         texts.append(text)
 
     return {
@@ -127,11 +129,11 @@ trainer = SFTTrainer(
     train_dataset=dataset_finetune,
     dataset_text_field="text",
     max_seq_length=max_seq_length,
-    dataset_num_proc=2,
+    dataset_num_proc=10,
 
     args=TrainingArguments(
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=8,
+        per_device_train_batch_size=16,
+        gradient_accumulation_steps=2,
         num_train_epochs=1,
         warmup_steps=5,
         max_steps=60,
@@ -158,13 +160,16 @@ inputs = tokenizer([prompt_style.format(question, "")], return_tensors="pt").to(
 outputs = model_lora.generate(
     input_ids=inputs.input_ids,
     attention_mask=inputs.attention_mask,
-    max_new_tokens=1200,
+    max_new_tokens=16384,
     use_cache=True,
 )
 
 response = tokenizer.batch_decode(outputs)
 
-print(response[0].split("### Response:")[1])
+try:
+    print(response[0].split("### Response:")[1])
+except Exception as e:
+    print(e)
 
 
 trainer_stats = trainer.train()
@@ -185,7 +190,10 @@ outputs = model_lora.generate(
 
 response = tokenizer.batch_decode(outputs)
 
-print(response[0].split("### Response:")[1])
+try:
+    print(response[0].split("### Response:")[1])
+except Exception as e:
+    print(e)
 
 
 try:
