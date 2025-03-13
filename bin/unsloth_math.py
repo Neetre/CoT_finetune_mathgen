@@ -28,7 +28,7 @@ run = wandb.init(
     anonymous="allow"
 )
 
-max_seq_length = 16384
+max_seq_length = 4096
 dtype = None
 load_in_4bit = True 
 
@@ -160,7 +160,7 @@ inputs = tokenizer([prompt_style.format(question, "")], return_tensors="pt").to(
 outputs = model_lora.generate(
     input_ids=inputs.input_ids,
     attention_mask=inputs.attention_mask,
-    max_new_tokens=16384,
+    max_new_tokens=4096,
     use_cache=True,
 )
 
@@ -184,7 +184,7 @@ inputs = tokenizer([prompt_style.format(question, "")], return_tensors="pt").to(
 outputs = model_lora.generate(
     input_ids=inputs.input_ids,
     attention_mask=inputs.attention_mask,
-    max_new_tokens=1200,
+    max_new_tokens=4096,
     use_cache=True,
 )
 
