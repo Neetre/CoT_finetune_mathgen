@@ -61,7 +61,7 @@ Solve the given math problem step by step. Show your reasoning and provide the f
 {}"""
 
 
-dataset = load_dataset("open-r1/OpenR1-Math-220k", "all", split = "train[0:1000]",trust_remote_code=True, cache_dir="./dataset_cache")
+dataset = load_dataset("open-r1/OpenR1-Math-220k", "default", split = "train[0:800]",trust_remote_code=True, cache_dir="./dataset_cache")
 print(dataset)
 print(dataset[1])
 # print(dataset[1]["generations"][0])
@@ -114,7 +114,7 @@ model_lora = FastLanguageModel.get_peft_model(
         "up_proj",
         "down_proj",
     ],
-    lora_alpha=16,
+    lora_alpha=8,
     lora_dropout=0,
     bias="none",
     use_gradient_checkpointing="unsloth",
@@ -132,15 +132,15 @@ trainer = SFTTrainer(
     dataset_num_proc=10,
 
     args=TrainingArguments(
-        per_device_train_batch_size=16,
-        gradient_accumulation_steps=2,
+        per_device_train_batch_size=32,
+        gradient_accumulation_steps=1,
         num_train_epochs=1,
         warmup_steps=5,
-        max_steps=60,
+        max_steps=30,
         learning_rate=2e-4,
         fp16=not is_bfloat16_supported(),
         bf16=is_bfloat16_supported(),
-        logging_steps=10,
+        logging_steps=5,
         optim="adamw_8bit",
         weight_decay=0.01,
         lr_scheduler_type="linear",
